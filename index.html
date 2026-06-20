@@ -191,6 +191,7 @@
   .teamHead .badge { font-size: 10px; background: rgba(255,255,255,.16); padding: 2px 8px; border-radius: 999px; letter-spacing: .5px; }
   .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(112px, 1fr)); gap: 10px; }
   .pcard {
+    position: relative;
     background: rgba(255,255,255,.07);
     border: 1.5px solid rgba(255,255,255,.14);
     border-radius: 16px; padding: 12px 10px;
@@ -203,6 +204,12 @@
   .pcard .av { width: 48px; height: 48px; border-radius: 50%; display: grid; place-items: center; font-weight: 900; font-size: 20px; color: #fff; box-shadow: inset 0 -3px 6px rgba(0,0,0,.25); }
   .pcard .pname { font-weight: 800; font-size: 16px; }
   .pcard .tag { font-size: 10px; opacity: .65; letter-spacing: .3px; text-align: center; min-height: 12px; }
+  .wedBadge {
+    position: absolute; top: -9px; left: 50%; transform: translateX(-50%);
+    background: linear-gradient(180deg, #fff, #ffe7bd); color: #b1264c;
+    font-size: 10px; font-weight: 800; letter-spacing: .4px; padding: 2px 9px; border-radius: 999px;
+    box-shadow: 0 2px 6px rgba(0,0,0,.3); white-space: nowrap; z-index: 2;
+  }
   .pcard .bars { width: 100%; display: flex; flex-direction: column; gap: 4px; margin-top: 2px; }
   .barRow { display: flex; align-items: center; gap: 6px; }
   .barRow span { font-size: 8px; width: 26px; opacity: .6; letter-spacing: .5px; }
@@ -211,7 +218,17 @@
   .linkBtn { background: none; border: none; color: #fff; opacity: .65; font-size: 15px; font-weight: 600; cursor: pointer; padding: 8px; }
 
   /* Wedding intro — Leroy 💍 Christie */
-  #weddingWrap { display: flex; flex-direction: column; align-items: center; gap: 4px; margin-bottom: 2px; }
+  #weddingWrap { position: relative; display: flex; flex-direction: column; align-items: center; gap: 4px; margin-bottom: 2px; }
+  .confetti-layer { position: absolute; inset: -6px 0 0 0; pointer-events: none; overflow: hidden; z-index: 2; }
+  .confetti-layer i {
+    position: absolute; top: -12px; width: 7px; height: 11px; border-radius: 1px; opacity: .9;
+    animation: confettiFall 2.8s linear infinite;
+  }
+  @keyframes confettiFall {
+    0%   { transform: translateY(-12px) rotate(0deg);   opacity: 0; }
+    12%  { opacity: 1; }
+    100% { transform: translateY(190px) rotate(540deg);  opacity: 0; }
+  }
   .banner {
     font-size: 13px; font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase;
     background: linear-gradient(180deg, #fff, #ffe7bd); color: #b1264c;
@@ -278,10 +295,12 @@
   <div id="overlay">
     <div id="startScreen" class="screen">
       <div id="weddingWrap">
+        <div class="confetti-layer" id="confettiLayer"></div>
         <div class="banner">💍 Just Married 💍</div>
         <svg class="couple" viewBox="0 0 300 158" xmlns="http://www.w3.org/2000/svg">
           <defs>
             <clipPath id="leroyClip"><circle cx="128" cy="62" r="24"/></clipPath>
+            <clipPath id="christieClip"><circle cx="178" cy="62" r="23"/></clipPath>
           </defs>
 
           <!-- floating hearts (outer g positions, inner path animates) -->
@@ -319,17 +338,9 @@
               <circle cx="2" cy="-4" r="2.8" fill="#ff5c7a"/>
               <rect x="1" y="2" width="1.5" height="9" fill="#3aa55a"/>
             </g>
-            <path d="M155 60 Q156 34 178 34 Q200 34 201 60 Q201 50 178 48 Q155 50 155 60 Z" fill="#6b4a2b"/>
-            <circle cx="178" cy="62" r="23" fill="#f7cda0"/>
-            <path d="M157 56 Q160 40 178 39 Q196 40 199 56 Q190 48 178 49 Q166 48 157 56 Z" fill="#7a5630"/>
-            <path d="M156 60 Q152 80 160 92 Q156 74 160 62 Z" fill="#6b4a2b"/>
-            <path d="M200 60 Q204 80 196 92 Q200 74 196 62 Z" fill="#6b4a2b"/>
-            <path d="M163 46 Q178 38 193 46" stroke="#ffe9c2" stroke-width="2.5" fill="none" stroke-linecap="round"/>
-            <circle cx="171" cy="62" r="1.8" fill="#3a2a1a"/>
-            <circle cx="184" cy="62" r="1.8" fill="#3a2a1a"/>
-            <circle cx="167" cy="68" r="2.6" fill="#ffb3c1" opacity=".7"/>
-            <circle cx="188" cy="68" r="2.6" fill="#ffb3c1" opacity=".7"/>
-            <path d="M173 70 Q178 74 183 70" stroke="#c0392b" stroke-width="1.6" fill="none" stroke-linecap="round"/>
+            <circle cx="178" cy="62" r="24" fill="#f7cda0"/>
+            <image href="Christie.jpeg" x="89.1" y="-23.9" width="180.8" height="179.1" clip-path="url(#christieClip)" preserveAspectRatio="xMidYMid slice"/>
+            <circle cx="178" cy="62" r="23" fill="none" stroke="rgba(0,0,0,.15)" stroke-width="1.5"/>
           </g>
 
           <!-- kiss burst (outer g positions, inner path animates) -->

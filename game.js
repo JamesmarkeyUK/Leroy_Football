@@ -31,25 +31,35 @@
   // keeper that's easier to wrong-foot.
   const TEAMS = {
     boys: { kit: '#ff5b5b', dark: '#c0392b', players: [
-      { name: 'Leroy',   pow: .72, cur: .66, con: .62, tag: 'The gaffer',
-        photo: 'leroy.png', face: { sx: 88, sy: 34, s: 150 } },
+      { name: 'Leroy',   pow: .72, cur: .66, con: .62, tag: 'The gaffer', wed: 'Mr',
+        photo: 'leroy.png', face: { sx: 88, sy: 34, s: 150 }, cardSize: '175%', cardPos: '55% 26%' },
       { name: 'Charlie', pow: .82, cur: .50, con: .54, tag: 'Big boot' },
       { name: 'Jack',    pow: .56, cur: .74, con: .60, tag: 'Tricky feet' },
       { name: 'Frankie', pow: .66, cur: .60, con: .52, tag: 'All effort' },
     ]},
     girls: { kit: '#a855f7', dark: '#7c3aed', players: [
-      { name: 'Christie', pow: .92, cur: .86, con: .92, tag: '★ Unstoppable' },
+      { name: 'Christie', pow: .92, cur: .86, con: .92, tag: '★ Unstoppable', wed: 'Mrs', bride: true,
+        photo: 'Christie.jpeg', face: { sx: 430, sy: 410, s: 300 }, cardSize: '290%', cardPos: '49% 40%' },
       { name: 'Elsie',    pow: .86, cur: .96, con: .82, tag: '★ Bends it' },
     ]},
   };
   let currentPlayer = TEAMS.boys.players[0];
   let currentKit = TEAMS.boys.kit;
 
-  // Leroy's photo, used for his card avatar + the striker on the pitch.
-  const leroyImg = new Image();
-  let leroyReady = false;
-  leroyImg.onload = () => { leroyReady = true; };
-  leroyImg.src = 'leroy.png';
+  // Player photos (Leroy + Christie) for card avatars and the on-pitch striker.
+  const photoCache = {};
+  function loadPhoto(src) {
+    if (!photoCache[src]) {
+      const rec = { img: new Image(), ready: false };
+      rec.img.onload = () => { rec.ready = true; };
+      rec.img.src = src;
+      photoCache[src] = rec;
+    }
+    return photoCache[src];
+  }
+  for (const team of Object.values(TEAMS))
+    for (const p of team.players)
+      if (p.photo) p._photo = loadPhoto(p.photo);
 
   function buildCards() {
     for (const [key, team] of Object.entries(TEAMS)) {
@@ -61,9 +71,10 @@
         const bar = (label, v) =>
           `<div class="barRow"><span>${label}</span><div class="bar"><i style="width:${Math.round(v*100)}%"></i></div></div>`;
         const avStyle = p.photo
-          ? `background-image:url(${p.photo});background-size:175%;background-position:55% 26%`
+          ? `background-image:url(${p.photo});background-size:${p.cardSize||'175%'};background-position:${p.cardPos||'50% 30%'}`
           : `background:linear-gradient(180deg,${team.kit},${team.dark})`;
-        card.innerHTML =
+        const wedBadge = p.wed ? `<div class="wedBadge">💍 ${p.wed}</div>` : '';
+        card.innerHTML = wedBadge +
           `<div class="av" style="${avStyle}">${p.photo ? '' : p.name[0]}</div>` +
           `<div class="pname">${p.name}</div>` +
           `<div class="tag">${p.tag}</div>` +
@@ -263,6 +274,22 @@
     startScreen.classList.remove('hidden');
   });
   buildCards();
+
+  // Confetti shower over the wedding couple on the title screen
+  (function buildConfetti() {
+    const layer = document.getElementById('confettiLayer');
+    if (!layer) return;
+    const cols = ['#ffd23f', '#ff6b6b', '#4dd2ff', '#7bed9f', '#a78bfa', '#ff9f43', '#fff'];
+    for (let i = 0; i < 18; i++) {
+      const s = document.createElement('i');
+      s.style.left = (4 + Math.random() * 92) + '%';
+      s.style.background = cols[i % cols.length];
+      s.style.width = (5 + Math.random() * 4) + 'px';
+      s.style.animationDelay = (-(Math.random() * 2.8)).toFixed(2) + 's';
+      s.style.animationDuration = (2.2 + Math.random() * 1.7).toFixed(2) + 's';
+      layer.appendChild(s);
+    }
+  })();
 
   // ---- Shooting ----
   function shoot(dragVX, dragVY) {
@@ -640,6 +667,17 @@
     ctx.fillStyle = 'rgba(0,0,0,0.22)';
     ctx.beginPath(); ctx.ellipse(0, 905, 70, 16, 0, 0, 7); ctx.fill();
 
+    // bride's veil (drawn behind the body so it drapes past the shoulders)
+    if (currentPlayer && currentPlayer.bride) {
+      ctx.fillStyle = 'rgba(255,255,255,0.5)';
+      ctx.beginPath();
+      ctx.moveTo(0, hy - headR);
+      ctx.quadraticCurveTo(-headR * 2.7, hy + 20, -headR * 2.3, hy + 122);
+      ctx.quadraticCurveTo(0, hy + 138, headR * 2.3, hy + 122);
+      ctx.quadraticCurveTo(headR * 2.7, hy + 20, 0, hy - headR);
+      ctx.fill();
+    }
+
     // torso (kit) with Red Bull sponsor
     const tColor = currentKit;
     const dark = currentPlayer && TEAMS.girls.players.includes(currentPlayer) ? '#7c3aed' : '#c0392b';
@@ -662,9 +700,9 @@
     // head
     ctx.save();
     ctx.beginPath(); ctx.arc(0, hy, headR, 0, 7); ctx.closePath(); ctx.clip();
-    if (currentPlayer && currentPlayer.photo && leroyReady) {
+    if (currentPlayer && currentPlayer._photo && currentPlayer._photo.ready) {
       const f = currentPlayer.face;
-      ctx.drawImage(leroyImg, f.sx, f.sy, f.s, f.s, -headR, hy - headR, headR*2, headR*2);
+      ctx.drawImage(currentPlayer._photo.img, f.sx, f.sy, f.s, f.s, -headR, hy - headR, headR*2, headR*2);
     } else {
       ctx.fillStyle = '#f6c89a';
       ctx.fillRect(-headR, hy - headR, headR*2, headR*2);

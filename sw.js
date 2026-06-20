@@ -1,11 +1,12 @@
 /* Leroy Football service worker — offline-first cache */
-const CACHE = 'leroy-football-v4';
+const CACHE = 'leroy-football-v5';
 const ASSETS = [
   './',
   './index.html',
   './game.js',
   './manifest.webmanifest',
   './leroy.png',
+  './Christie.jpeg',
   './icons/icon-192.png',
   './icons/icon-512.png',
   './icons/icon-maskable-512.png'
