@@ -209,6 +209,37 @@
   .bar { flex: 1; height: 5px; border-radius: 3px; background: rgba(255,255,255,.14); overflow: hidden; }
   .bar > i { display: block; height: 100%; border-radius: 3px; background: linear-gradient(90deg, #ffe066, #ff9f43); }
   .linkBtn { background: none; border: none; color: #fff; opacity: .65; font-size: 15px; font-weight: 600; cursor: pointer; padding: 8px; }
+
+  /* Wedding intro — Leroy 💍 Christie */
+  #weddingWrap { display: flex; flex-direction: column; align-items: center; gap: 4px; margin-bottom: 2px; }
+  .banner {
+    font-size: 13px; font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase;
+    background: linear-gradient(180deg, #fff, #ffe7bd); color: #b1264c;
+    padding: 5px 16px; border-radius: 999px; box-shadow: 0 4px 12px rgba(0,0,0,.28);
+  }
+  .couple { width: min(74vw, 290px); height: auto; overflow: visible; }
+  .groom, .bride { transition: transform .25s ease; }
+  .groom { animation: bobA 2.6s ease-in-out infinite; }
+  .bride { animation: bobB 2.6s ease-in-out infinite .3s; }
+  @keyframes bobA { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-3px); } }
+  @keyframes bobB { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-2px); } }
+  .heart { transform-box: fill-box; transform-origin: center; animation: floatUp 2.8s ease-in infinite; }
+  .heart.h2 { animation-delay: .8s; } .heart.h3 { animation-delay: 1.6s; } .heart.h4 { animation-delay: 2.2s; }
+  @keyframes floatUp {
+    0%   { opacity: 0; transform: translateY(4px) scale(.5); }
+    25%  { opacity: .95; }
+    100% { opacity: 0; transform: translateY(-40px) scale(1.1); }
+  }
+  #kissHeart { transform-box: fill-box; transform-origin: center; opacity: 0; }
+  .kissing .groom { animation: none; transform: translateX(7px) translateY(-1px); }
+  .kissing .bride { animation: none; transform: translateX(-7px) translateY(-1px); }
+  .kissing #kissHeart { animation: kissPop .85s ease-out; }
+  @keyframes kissPop {
+    0%   { opacity: 0; transform: scale(.2); }
+    30%  { opacity: 1; transform: scale(1.35); }
+    70%  { opacity: 1; transform: scale(1); }
+    100% { opacity: 0; transform: scale(1.2) translateY(-10px); }
+  }
   .mute {
     position: fixed;
     top: calc(env(safe-area-inset-top, 0) + 60px);
@@ -246,6 +277,67 @@
 
   <div id="overlay">
     <div id="startScreen" class="screen">
+      <div id="weddingWrap">
+        <div class="banner">💍 Just Married 💍</div>
+        <svg class="couple" viewBox="0 0 300 158" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <clipPath id="leroyClip"><circle cx="128" cy="62" r="24"/></clipPath>
+          </defs>
+
+          <!-- floating hearts (outer g positions, inner path animates) -->
+          <g fill="#ff5c7a">
+            <g transform="translate(150 70)"><path class="heart h1" d="M0 3 C-4 -3 -11 0 -8 5 L0 12 L8 5 C11 0 4 -3 0 3 Z"/></g>
+            <g transform="translate(135 74)"><path class="heart h2" d="M0 3 C-4 -3 -11 0 -8 5 L0 12 L8 5 C11 0 4 -3 0 3 Z"/></g>
+            <g transform="translate(165 73)"><path class="heart h3" d="M0 3 C-4 -3 -11 0 -8 5 L0 12 L8 5 C11 0 4 -3 0 3 Z"/></g>
+            <g transform="translate(151 78)"><path class="heart h4" d="M0 3 C-4 -3 -11 0 -8 5 L0 12 L8 5 C11 0 4 -3 0 3 Z"/></g>
+          </g>
+
+          <!-- GROOM: Leroy in a navy suit -->
+          <g class="groom">
+            <path d="M104 150 Q104 96 128 92 Q152 96 152 150 Z" fill="#1b2440"/>
+            <path d="M122 96 L134 96 L131 126 L125 126 Z" fill="#f4f6fb"/>
+            <path d="M121 98 L128 101 L121 104 Z" fill="#d62631"/>
+            <path d="M135 98 L128 101 L135 104 Z" fill="#d62631"/>
+            <circle cx="128" cy="101" r="1.6" fill="#a51d27"/>
+            <path d="M128 94 L120 100 L124 112 Z" fill="#141b30"/>
+            <path d="M128 94 L136 100 L132 112 Z" fill="#141b30"/>
+            <circle cx="128" cy="62" r="25" fill="#f6c89a"/>
+            <image href="leroy.png" x="75.8" y="27.1" width="90.2" height="90.9" clip-path="url(#leroyClip)" preserveAspectRatio="xMidYMid slice"/>
+            <circle cx="128" cy="62" r="24" fill="none" stroke="rgba(0,0,0,.15)" stroke-width="1.5"/>
+          </g>
+
+          <!-- BRIDE: Christie in a white wedding dress + veil -->
+          <g class="bride">
+            <path d="M172 48 Q150 70 158 150 L150 150 Q140 80 168 46 Z" fill="#ffffff" opacity=".5"/>
+            <path d="M184 48 Q210 72 200 150 L208 150 Q220 78 190 46 Z" fill="#ffffff" opacity=".5"/>
+            <path d="M156 150 Q154 100 178 94 Q202 100 200 150 Z" fill="#ffffff"/>
+            <path d="M178 94 Q166 104 164 150 L178 150 Z" fill="#eef1f7"/>
+            <path d="M165 116 Q178 122 191 116 L190 122 Q178 128 166 122 Z" fill="#a855f7"/>
+            <g transform="translate(170 121)">
+              <circle cx="0" cy="0" r="3.4" fill="#ff7aa8"/>
+              <circle cx="5" cy="1" r="3" fill="#ffd23f"/>
+              <circle cx="2" cy="-4" r="2.8" fill="#ff5c7a"/>
+              <rect x="1" y="2" width="1.5" height="9" fill="#3aa55a"/>
+            </g>
+            <path d="M155 60 Q156 34 178 34 Q200 34 201 60 Q201 50 178 48 Q155 50 155 60 Z" fill="#6b4a2b"/>
+            <circle cx="178" cy="62" r="23" fill="#f7cda0"/>
+            <path d="M157 56 Q160 40 178 39 Q196 40 199 56 Q190 48 178 49 Q166 48 157 56 Z" fill="#7a5630"/>
+            <path d="M156 60 Q152 80 160 92 Q156 74 160 62 Z" fill="#6b4a2b"/>
+            <path d="M200 60 Q204 80 196 92 Q200 74 196 62 Z" fill="#6b4a2b"/>
+            <path d="M163 46 Q178 38 193 46" stroke="#ffe9c2" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+            <circle cx="171" cy="62" r="1.8" fill="#3a2a1a"/>
+            <circle cx="184" cy="62" r="1.8" fill="#3a2a1a"/>
+            <circle cx="167" cy="68" r="2.6" fill="#ffb3c1" opacity=".7"/>
+            <circle cx="188" cy="68" r="2.6" fill="#ffb3c1" opacity=".7"/>
+            <path d="M173 70 Q178 74 183 70" stroke="#c0392b" stroke-width="1.6" fill="none" stroke-linecap="round"/>
+          </g>
+
+          <!-- kiss burst (outer g positions, inner path animates) -->
+          <g transform="translate(151 48)">
+            <path id="kissHeart" fill="#ff3b6b" d="M0 5 C-7 -5 -20 1 -14 9 L0 22 L14 9 C20 1 7 -5 0 5 Z"/>
+          </g>
+        </svg>
+      </div>
       <h1><span class="ball">⚽</span> Leroy Football</h1>
       <p id="startText">Pick a striker and swipe to bend it past the keeper. You get <b>3 misses</b>. Build a streak for bonus points!</p>
       <div class="stat">Best score: <b id="hiScore">0</b></div>

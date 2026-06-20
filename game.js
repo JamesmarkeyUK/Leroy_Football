@@ -132,6 +132,7 @@
   function missSound()  { blip(120, 0.3, 'sine', 0.2, 70); }
   function whistle()    { blip(2000, 0.15, 'square', 0.06, 2400); }
   function fizzSound()   { blip(700, 0.18, 'sawtooth', 0.12, 1500); }
+  function kissSound()   { blip(520, 0.12, 'sine', 0.13, 720); setTimeout(()=>blip(820, 0.16, 'sine', 0.12, 1080), 110); }
   function wingsSound()  { [600,900,1300,1700].forEach((f,i)=>setTimeout(()=>blip(f,0.1,'triangle',0.16),i*45)); }
 
   muteBtn.addEventListener('click', () => {
@@ -250,7 +251,13 @@
     overlay.classList.remove('hidden');
   }
 
-  startBtn.addEventListener('click', () => { audio(); showTeamSelect(); });
+  startBtn.addEventListener('click', () => {
+    audio();
+    // Leroy & Christie kiss to kick things off 💍
+    startScreen.classList.add('kissing');
+    kissSound();
+    setTimeout(() => { startScreen.classList.remove('kissing'); showTeamSelect(); }, 850);
+  });
   backBtn.addEventListener('click', () => {
     teamSelect.classList.add('hidden');
     startScreen.classList.remove('hidden');
