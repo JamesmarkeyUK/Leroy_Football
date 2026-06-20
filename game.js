@@ -31,7 +31,8 @@
   // keeper that's easier to wrong-foot.
   const TEAMS = {
     boys: { kit: '#ff5b5b', dark: '#c0392b', players: [
-      { name: 'Leroy',   pow: .72, cur: .66, con: .62, tag: 'The captain' },
+      { name: 'Leroy',   pow: .72, cur: .66, con: .62, tag: 'The gaffer',
+        photo: 'leroy.png', face: { sx: 88, sy: 34, s: 150 } },
       { name: 'Charlie', pow: .82, cur: .50, con: .54, tag: 'Big boot' },
       { name: 'Jack',    pow: .56, cur: .74, con: .60, tag: 'Tricky feet' },
       { name: 'Frankie', pow: .66, cur: .60, con: .52, tag: 'All effort' },
@@ -44,6 +45,12 @@
   let currentPlayer = TEAMS.boys.players[0];
   let currentKit = TEAMS.boys.kit;
 
+  // Leroy's photo, used for his card avatar + the striker on the pitch.
+  const leroyImg = new Image();
+  let leroyReady = false;
+  leroyImg.onload = () => { leroyReady = true; };
+  leroyImg.src = 'leroy.png';
+
   function buildCards() {
     for (const [key, team] of Object.entries(TEAMS)) {
       const host = document.getElementById(key + 'Cards');
@@ -53,8 +60,11 @@
         card.className = 'pcard';
         const bar = (label, v) =>
           `<div class="barRow"><span>${label}</span><div class="bar"><i style="width:${Math.round(v*100)}%"></i></div></div>`;
+        const avStyle = p.photo
+          ? `background-image:url(${p.photo});background-size:175%;background-position:55% 26%`
+          : `background:linear-gradient(180deg,${team.kit},${team.dark})`;
         card.innerHTML =
-          `<div class="av" style="background:linear-gradient(180deg,${team.kit},${team.dark})">${p.name[0]}</div>` +
+          `<div class="av" style="${avStyle}">${p.photo ? '' : p.name[0]}</div>` +
           `<div class="pname">${p.name}</div>` +
           `<div class="tag">${p.tag}</div>` +
           `<div class="bars">${bar('PWR',p.pow)}${bar('CRV',p.cur)}${bar('CTL',p.con)}</div>`;
@@ -121,6 +131,8 @@
   function saveSound()  { blip(140, 0.22, 'sawtooth', 0.2, 60); }
   function missSound()  { blip(120, 0.3, 'sine', 0.2, 70); }
   function whistle()    { blip(2000, 0.15, 'square', 0.06, 2400); }
+  function fizzSound()   { blip(700, 0.18, 'sawtooth', 0.12, 1500); }
+  function wingsSound()  { [600,900,1300,1700].forEach((f,i)=>setTimeout(()=>blip(f,0.1,'triangle',0.16),i*45)); }
 
   muteBtn.addEventListener('click', () => {
     muted = !muted;
@@ -134,6 +146,11 @@
   let state = State.MENU;
   let score = 0, streak = 0, best = 0, misses = 0;
   const MAX_MISSES = 3;
+
+  // Red Bull boost — "gives you wings". Fills 1/3 per goal; when full, tap the
+  // can to arm a winged power shot.
+  let boostCharge = 0, boostArmed = false;
+  const BOOST = { x: 524, y: 808 };
 
   // ball
   const ball = {
@@ -158,7 +175,7 @@
   let aiming = false;
   let aimStart = null, aimCur = null;
   let particles = [];
-  let netRipple = 0, shake = 0, flash = 0;
+  let netRipple = 0, shake = 0, flash = 0, strikerKick = 0;
   let resultTimer = 0;
   let ballTrail = [];
 
@@ -182,6 +199,7 @@
     ball.x = spot.x; ball.y = spot.y; ball.z = 0;
     ball.vx = ball.vy = ball.vz = 0;
     ball.spin = 0; ball.rot = 0; ball.scale = 1; ball.flying = false;
+    ball.winged = false;
     ballTrail = [];
   }
 
@@ -204,6 +222,7 @@
     playerDot.style.background = kit;
     playerPill.classList.add('show');
     score = 0; streak = 0; best = 0; misses = 0;
+    boostCharge = 0; boostArmed = false;
     setHUD();
     state = State.AIM;
     overlay.classList.add('hidden');
@@ -256,6 +275,22 @@
     ball.vy = Math.sin(ang) * speed;
     ball.vz = 4 + power * 7;                            // loft
     ball.spin = dragVX * 0.0009 * (0.75 + P.cur * 0.7); // curve scaled by player
+
+    // Red Bull wings: armed boost gives extra pace, more bend and lift.
+    ball.winged = false;
+    if (boostArmed) {
+      ball.vx *= 1.38; ball.vy *= 1.38; ball.vz += 1.5;
+      ball.spin *= 1.7;
+      ball.winged = true;
+      boostArmed = false;
+      wingsSound();
+      for (let i = 0; i < 22; i++) {
+        const a = Math.random() * Math.PI * 2, sp = 2 + Math.random() * 5;
+        particles.push({ x: ball.x, y: ball.y, vx: Math.cos(a)*sp, vy: Math.sin(a)*sp,
+          life: 1, r: 3 + Math.random()*4, c: '#ffd23f', kind: 'confetti', rot: 0, vr: 0 });
+      }
+    }
+
     ball.flying = true;
     ball._aimX = aimX;
     ball._power = power;
@@ -273,6 +308,7 @@
     keeper.reacting = true;
 
     state = State.FLIGHT;
+    strikerKick = 1;
     hintEl.style.opacity = '0';
     kickSound();
     spawnKickDust();
@@ -327,8 +363,10 @@
       netRipple = 1; flash = 0.5; shake = 8;
       spawnConfetti(ball.x, ball.y);
       goalSound();
-      toast(`${currentPlayer.name.toUpperCase()} SCORES!`, '#7bed9f');
+      if (ball.winged) toast('🪽 WINGS GOAL!', '#ffd23f');
+      else toast(`${currentPlayer.name.toUpperCase()} SCORES!`, '#7bed9f');
       if (streak === 3) setTimeout(()=>toast('ON FIRE 🔥','#ffd23f'), 350);
+      boostCharge = Math.min(1, boostCharge + 1/3);
       ball._scored = true;
     } else {
       // MISS or SAVE
@@ -415,6 +453,7 @@
     netRipple *= Math.pow(0.92, dt);
     shake *= Math.pow(0.86, dt);
     flash *= Math.pow(0.88, dt);
+    strikerKick *= Math.pow(0.9, dt);
   }
 
   // ---- Render ----
@@ -429,12 +468,15 @@
     ctx.scale(scale, scale);
 
     drawPitch();
+    drawAdBoards();
     drawGoal();
     drawKeeper();
+    drawStriker();
     drawBallTrail();
     if (state === State.AIM) drawAimGuide();
     drawBall();
     drawParticles();
+    drawBoost();
 
     if (flash > 0.02) {
       ctx.fillStyle = `rgba(255,255,255,${flash})`;
@@ -543,6 +585,155 @@
     ctx.restore();
   }
 
+  // Red Bull pitchside advertising hoardings behind the goal
+  function drawAdBoards() {
+    const bx = goal.x - 34, bw = goal.w + 68, by = 120, bh = 34;
+    ctx.save();
+    roundRect(bx, by, bw, bh, 4, false);
+    ctx.clip();
+    const panelW = 104;
+    const scroll = (performance.now() / 45) % panelW;
+    for (let i = -1; i * panelW - scroll < bw; i++) {
+      const px = bx + i * panelW - scroll;
+      const even = ((i % 2) + 2) % 2 === 0;
+      ctx.fillStyle = even ? '#0a1a4a' : '#d62631';
+      ctx.fillRect(px, by, panelW, bh);
+      // yellow "sun" disc
+      ctx.fillStyle = '#ffc905';
+      ctx.beginPath(); ctx.arc(px + 22, by + bh/2, 9, 0, 7); ctx.fill();
+      // wordmark
+      ctx.fillStyle = even ? '#ffc905' : '#ffffff';
+      ctx.font = '700 13px -apple-system, Arial, sans-serif';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('RED BULL', px + 35, by + bh/2 + 1);
+    }
+    ctx.restore();
+    // frame + legs
+    ctx.strokeStyle = 'rgba(0,0,0,0.3)'; ctx.lineWidth = 2;
+    roundRect(bx, by, bw, bh, 4, false);
+    ctx.fillStyle = 'rgba(0,0,0,0.25)';
+    ctx.fillRect(bx + 30, by + bh, 5, 8);
+    ctx.fillRect(bx + bw - 35, by + bh, 5, 8);
+    ctx.textBaseline = 'alphabetic';
+  }
+
+  // Foreground striker taking the kick — Leroy's photo for his head.
+  function drawStriker() {
+    if (state === State.MENU || state === State.OVER) return;
+    const kick = strikerKick;
+    const cx = spot.x, hy = 820 - kick * 8;       // small bob on the strike
+    const headR = 30;
+    ctx.save();
+    ctx.translate(cx, 0);
+    ctx.rotate(-kick * 0.06);
+
+    // ground shadow
+    ctx.fillStyle = 'rgba(0,0,0,0.22)';
+    ctx.beginPath(); ctx.ellipse(0, 905, 70, 16, 0, 0, 7); ctx.fill();
+
+    // torso (kit) with Red Bull sponsor
+    const tColor = currentKit;
+    const dark = currentPlayer && TEAMS.girls.players.includes(currentPlayer) ? '#7c3aed' : '#c0392b';
+    const grd = ctx.createLinearGradient(0, hy + 20, 0, 930);
+    grd.addColorStop(0, tColor); grd.addColorStop(1, dark);
+    ctx.fillStyle = grd;
+    roundRect(-62, hy + 16, 124, 110, 30, true);
+    // collar
+    ctx.fillStyle = 'rgba(255,255,255,0.25)';
+    roundRect(-22, hy + 14, 44, 12, 6, true);
+    // Red Bull chest sponsor
+    ctx.fillStyle = '#fff';
+    ctx.font = '800 16px -apple-system, Arial, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('RED BULL', 0, hy + 66);
+    ctx.fillStyle = '#ffc905';
+    ctx.beginPath(); ctx.arc(0, hy + 84, 7, 0, 7); ctx.fill();
+    ctx.textAlign = 'left';
+
+    // head
+    ctx.save();
+    ctx.beginPath(); ctx.arc(0, hy, headR, 0, 7); ctx.closePath(); ctx.clip();
+    if (currentPlayer && currentPlayer.photo && leroyReady) {
+      const f = currentPlayer.face;
+      ctx.drawImage(leroyImg, f.sx, f.sy, f.s, f.s, -headR, hy - headR, headR*2, headR*2);
+    } else {
+      ctx.fillStyle = '#f6c89a';
+      ctx.fillRect(-headR, hy - headR, headR*2, headR*2);
+      ctx.fillStyle = 'rgba(0,0,0,0.18)';
+      ctx.font = '800 26px -apple-system, Arial, sans-serif';
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText(currentPlayer ? currentPlayer.name[0] : '?', 0, hy + 1);
+      ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+    }
+    ctx.restore();
+    // head ring
+    ctx.strokeStyle = 'rgba(0,0,0,0.18)'; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.arc(0, hy, headR, 0, 7); ctx.stroke();
+
+    ctx.restore();
+  }
+
+  // Red Bull boost can + charge meter
+  function drawBoost() {
+    if (state === State.MENU || state === State.OVER) return;
+    const x = BOOST.x, y = BOOST.y, w = 38, h = 70;
+    const ready = boostCharge >= 1;
+    const t = performance.now();
+    const pulse = ready ? 0.5 + 0.5 * Math.sin(t / 200) : 0;
+
+    ctx.save();
+    // glow when ready / armed
+    if (ready || boostArmed) {
+      ctx.fillStyle = `rgba(255,210,63,${0.18 + pulse * 0.22})`;
+      ctx.beginPath(); ctx.arc(x, y, 46 + pulse * 6, 0, 7); ctx.fill();
+    }
+    // charge ring
+    ctx.lineWidth = 4;
+    ctx.strokeStyle = 'rgba(0,0,0,0.3)';
+    ctx.beginPath(); ctx.arc(x, y, 30, 0, 7); ctx.stroke();
+    ctx.strokeStyle = ready ? '#ffd23f' : '#7bed9f';
+    ctx.beginPath(); ctx.arc(x, y, 30, -Math.PI/2, -Math.PI/2 + boostCharge * Math.PI * 2); ctx.stroke();
+
+    // the can
+    const dim = ready || boostArmed ? 1 : 0.55;
+    ctx.globalAlpha = dim;
+    const cg = ctx.createLinearGradient(x - w/2, 0, x + w/2, 0);
+    cg.addColorStop(0, '#9aa3ad'); cg.addColorStop(.5, '#eef1f4'); cg.addColorStop(1, '#9aa3ad');
+    ctx.fillStyle = cg;
+    roundRect(x - w/2, y - h/2, w, h, 7, true);
+    // top lid
+    ctx.fillStyle = '#c7ccd2';
+    roundRect(x - w/2 + 3, y - h/2 - 3, w - 6, 7, 3, true);
+    // blue diagonals (Red Bull motif)
+    ctx.save();
+    roundRect(x - w/2, y - h/2, w, h, 7, false); ctx.clip();
+    ctx.fillStyle = '#0a1a6a';
+    ctx.beginPath();
+    ctx.moveTo(x - w/2, y - 6); ctx.lineTo(x + w/2, y - 16);
+    ctx.lineTo(x + w/2, y + h); ctx.lineTo(x - w/2, y + h); ctx.closePath(); ctx.fill();
+    ctx.beginPath();
+    ctx.moveTo(x - w/2, y - 18); ctx.lineTo(x + w/2, y - 28);
+    ctx.lineTo(x + w/2, y - 18); ctx.lineTo(x - w/2, y - 8); ctx.closePath();
+    ctx.fillStyle = '#d62631'; ctx.fill();
+    // yellow sun
+    ctx.fillStyle = '#ffc905';
+    ctx.beginPath(); ctx.arc(x, y + 6, 8, 0, 7); ctx.fill();
+    ctx.restore();
+    // tiny label
+    ctx.globalAlpha = 1;
+    ctx.fillStyle = ready ? '#ffd23f' : 'rgba(255,255,255,0.85)';
+    ctx.font = '800 12px -apple-system, Arial, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText(boostArmed ? 'ARMED' : ready ? 'WINGS!' : 'BOOST', x, y + h/2 + 20);
+    if (ready && !boostArmed) {
+      ctx.font = '700 10px -apple-system, Arial, sans-serif';
+      ctx.fillStyle = 'rgba(255,255,255,0.8)';
+      ctx.fillText('tap', x, y + h/2 + 33);
+    }
+    ctx.textAlign = 'left';
+    ctx.restore();
+  }
+
   function drawBallTrail() {
     for (let i = 0; i < ballTrail.length; i++) {
       const t = ballTrail[i];
@@ -561,6 +752,29 @@
     ctx.beginPath();
     ctx.ellipse(ball.x, ball.y + 6, r * (1 - ball.z/900), r*0.4*(1-ball.z/900), 0, 0, 7);
     ctx.fill();
+
+    // Red Bull wings — golden aura + wings when armed or in flight
+    const winged = ball.winged || (boostArmed && state === State.AIM);
+    if (winged) {
+      const pulse = 0.6 + 0.4 * Math.sin(performance.now() / 120);
+      ctx.fillStyle = `rgba(255,210,63,${0.22 * pulse})`;
+      ctx.beginPath(); ctx.arc(bx, by, r * 2.1, 0, 7); ctx.fill();
+      const wr = r * 1.5;
+      for (const side of [-1, 1]) {
+        ctx.save();
+        ctx.translate(bx + side * r * 0.7, by - r * 0.2);
+        ctx.scale(side, 1);
+        ctx.fillStyle = 'rgba(255,255,255,0.92)';
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        ctx.quadraticCurveTo(wr * 0.9, -wr * 0.8, wr * 1.4, -wr * 0.2);
+        ctx.quadraticCurveTo(wr * 0.8, -wr * 0.1, wr, wr * 0.2);
+        ctx.quadraticCurveTo(wr * 0.5, wr * 0.15, 0, 0);
+        ctx.fill();
+        ctx.strokeStyle = 'rgba(255,200,40,0.7)'; ctx.lineWidth = 1.5; ctx.stroke();
+        ctx.restore();
+      }
+    }
 
     ctx.save();
     ctx.translate(bx, by);
@@ -665,6 +879,15 @@
   function pointerDown(cx, cy) {
     if (state !== State.AIM) return;
     const p = toV(cx, cy);
+    // tap the Red Bull can (when charged) to arm a winged shot
+    if (Math.hypot(p.x - BOOST.x, p.y - BOOST.y) < 56) {
+      if (boostCharge >= 1 && !boostArmed) {
+        boostArmed = true; boostCharge = 0;
+        fizzSound();
+        toast('WINGS ARMED 🪽', '#ffd23f');
+      }
+      return;
+    }
     // must start near the ball
     if (Math.hypot(p.x - ball.x, p.y - ball.y) < 140) {
       aiming = true;

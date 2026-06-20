@@ -12,6 +12,11 @@ offline.
 2. **Swipe up from the ball** to shoot — swipe direction aims it, swipe length
    sets power, and a sideways swipe **bends** the ball around the keeper.
 3. You get **3 misses**. Score 3+ in a row to go **ON FIRE 🔥** for bonus points.
+4. Every goal charges the **Red Bull boost**. When the can lights up, tap it to
+   arm a **winged power shot** 🪽 — extra pace and bend to beat the keeper.
+
+Leroy is the gaffer — that's his actual mug on the pitch. **Red Bull** sponsors
+the match (pitchside boards + shirt).
 
 ## The teams
 
