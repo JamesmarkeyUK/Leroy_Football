@@ -349,7 +349,9 @@
   function resolveShot() {
     state = State.RESULT;
     resultTimer = 0;
-    const inMouthX = ball.x > goal.x + 6 && ball.x < goal.x + goal.w - 6;
+    // Count it as long as at least half the ball is inside the posts — i.e. the
+    // ball's centre is level with (or inside) the inner edge of either post.
+    const inMouthX = ball.x >= goal.x && ball.x <= goal.x + goal.w;
     const aboveBar = ball.y < goal.y - 4;
     const crossedLine = ball.y <= goal.y + 26;
 
