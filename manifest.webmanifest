@@ -1,0 +1,17 @@
+{
+  "name": "Leroy Football",
+  "short_name": "Leroy FC",
+  "description": "A fun swipe-to-shoot penalty shootout game. Bend it past the keeper and rack up a streak!",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "fullscreen",
+  "orientation": "portrait",
+  "background_color": "#06371a",
+  "theme_color": "#0d5c24",
+  "categories": ["games", "sports", "entertainment"],
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
