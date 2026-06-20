@@ -3,6 +3,10 @@
 (() => {
   'use strict';
 
+  // Bump VERSION on every deploy (and the CACHE name in sw.js to match) so the
+  // build number shown in the corner changes when a new version goes live.
+  const VERSION = 'v6';
+
   const canvas = document.getElementById('game');
   const ctx = canvas.getContext('2d');
 
@@ -31,14 +35,14 @@
   // keeper that's easier to wrong-foot.
   const TEAMS = {
     boys: { kit: '#ff5b5b', dark: '#c0392b', players: [
-      { name: 'Leroy',   pow: .72, cur: .66, con: .62, tag: 'The gaffer', wed: 'Mr',
+      { name: 'Leroy',   pow: .72, cur: .66, con: .62, tag: 'The gaffer', wed: 'Husband to be',
         photo: 'leroy.png', face: { sx: 88, sy: 34, s: 150 }, cardSize: '175%', cardPos: '55% 26%' },
       { name: 'Charlie', pow: .82, cur: .50, con: .54, tag: 'Big boot' },
       { name: 'Jack',    pow: .56, cur: .74, con: .60, tag: 'Tricky feet' },
       { name: 'Frankie', pow: .66, cur: .60, con: .52, tag: 'All effort' },
     ]},
     girls: { kit: '#a855f7', dark: '#7c3aed', players: [
-      { name: 'Christie', pow: .92, cur: .86, con: .92, tag: '★ Unstoppable', wed: 'Mrs', bride: true,
+      { name: 'Christie', pow: .92, cur: .86, con: .92, tag: '★ Unstoppable', wed: 'Bride to be', bride: true,
         photo: 'Christie.jpeg', face: { sx: 430, sy: 410, s: 300 }, cardSize: '290%', cardPos: '49% 40%' },
       { name: 'Elsie',    pow: .86, cur: .96, con: .82, tag: '★ Bends it' },
     ]},
@@ -376,16 +380,19 @@
   function resolveShot() {
     state = State.RESULT;
     resultTimer = 0;
-    // Count it as long as at least half the ball is inside the posts — i.e. the
-    // ball's centre is level with (or inside) the inner edge of either post.
+    const r = ball.r * ball.scale;   // ball's visual radius near the goal
+    // Count it as long as at least half the ball is inside the frame — the ball's
+    // centre level with (or inside) the inner edge of a post OR the crossbar.
     const inMouthX = ball.x >= goal.x && ball.x <= goal.x + goal.w;
-    const aboveBar = ball.y < goal.y - 4;
+    const aboveBar = ball.y < goal.y - r * 0.6;   // only "over" once the ball clears the bar
     const crossedLine = ball.y <= goal.y + 26;
 
     // keeper hand position
     const kx = keeper.x + keeper.diveX;
     const reach = 70 + keeper.armUp * 40;
     const saved = Math.abs(ball.x - kx) < reach && ball.z < 130 && inMouthX;
+    const power = ball._power || 0;
+    const wideBy = Math.max(goal.x - ball.x, ball.x - (goal.x + goal.w)); // px outside a post
 
     if (!crossedLine) return; // still resolving elsewhere
     if (inMouthX && !aboveBar && !saved) {
@@ -393,26 +400,41 @@
       score++;
       streak++;
       best = Math.max(best, streak);
-      const bonus = streak >= 3 ? ` +${streak}` : '';
       score += streak >= 3 ? streak : 0;
       setHUD();
       netRipple = 1; flash = 0.5; shake = 8;
       spawnConfetti(ball.x, ball.y);
       goalSound();
-      if (ball.winged) toast('🪽 WINGS GOAL!', '#ffd23f');
-      else toast(`${currentPlayer.name.toUpperCase()} SCORES!`, '#7bed9f');
+      // a "tight" finish that only counted thanks to the post / bar leniency
+      const tightBar  = ball.y < goal.y;
+      const tightPost = ball.x < goal.x + r * 1.5 || ball.x > goal.x + goal.w - r * 1.5;
+      if (ball.winged)               toast('🪽 WINGS GOAL!', '#ffd23f');
+      else if (tightBar && tightPost) toast('TOP BINS! 🎯', '#ffd23f');
+      else if (tightBar)              toast('UNDER THE BAR! 🎯', '#ffd23f');
+      else if (tightPost)             toast('NICE GOAL! 🎯', '#ffd23f');
+      else                            toast(`${currentPlayer.name.toUpperCase()} SCORES!`, '#7bed9f');
       if (streak === 3) setTimeout(()=>toast('ON FIRE 🔥','#ffd23f'), 350);
       boostCharge = Math.min(1, boostCharge + 1/3);
       ball._scored = true;
     } else {
-      // MISS or SAVE
+      // MISS or SAVE — pick a remark that fits how it missed
       misses++;
       streak = 0;
       setHUD();
       shake = 6;
-      if (saved) { saveSound(); toast('SAVED!', '#4dd2ff'); }
-      else if (aboveBar) { missSound(); toast('OVER!', '#ff9f43'); }
-      else { missSound(); toast('MISS!', '#ff6b6b'); }
+      let msg = 'MISS!', col = '#ff6b6b';
+      if (saved) {
+        saveSound();
+        if (power < 0.4) { msg = 'TOO SLOW! 🐌'; col = '#9aa6b2'; }
+        else            { msg = 'SAVED!';       col = '#4dd2ff'; }
+      } else {
+        missSound();
+        if (aboveBar)            { msg = 'HIT THE CLOUDS! ☁️'; col = '#ff9f43'; }
+        else if (wideBy <= r * 1.8) { msg = 'OFF THE POST!';   col = '#ff9f43'; }
+        else if (wideBy <= 70)      { msg = 'CLOSE!';          col = '#ffd23f'; }
+        else                        { msg = 'NOWHERE NEAR!';   col = '#ff6b6b'; }
+      }
+      toast(msg, col);
       ball._scored = false;
     }
   }
@@ -461,7 +483,7 @@
       }
       // safety: ball left field
       if (state === State.FLIGHT && (ball.y < -60 || ball.x < -120 || ball.x > V.w + 120)) {
-        misses++; streak = 0; setHUD(); missSound(); toast('MISS!','#ff6b6b');
+        misses++; streak = 0; setHUD(); missSound(); toast('NOWHERE NEAR!','#ff6b6b');
         state = State.RESULT; resultTimer = 0; ball._scored = false;
       }
     }
@@ -969,5 +991,8 @@
     requestAnimationFrame(frame);
   }
   setHUD();
+  const versionTag = document.getElementById('versionTag');
+  if (versionTag) versionTag.textContent = VERSION;
+  console.log('⚽ Leroy Football', VERSION);
   requestAnimationFrame(frame);
 })();

@@ -46,3 +46,11 @@ python3 -m http.server 8000
 ```
 
 Use `http://localhost` (not `file://`) so the service worker can register.
+
+## Versioning
+
+The build number shown bottom-left in-game comes from `VERSION` in `game.js`.
+**On every deploy, bump both** `VERSION` (game.js) and the `CACHE` name (sw.js) —
+keep them in step (e.g. `v6` ↔ `leroy-football-v6`). The cache bump is what makes
+installed PWAs pull the new build, and the on-screen number is how you can tell at
+a glance which version you're playing.
