@@ -5,7 +5,7 @@
 
   // Bump VERSION on every deploy (and the CACHE name in sw.js to match) so the
   // build number shown in the corner changes when a new version goes live.
-  const VERSION = 'v6';
+  const VERSION = 'v7';
 
   const canvas = document.getElementById('game');
   const ctx = canvas.getContext('2d');
@@ -194,6 +194,7 @@
   let netRipple = 0, shake = 0, flash = 0, strikerKick = 0;
   let resultTimer = 0;
   let ballTrail = [];
+  let shotMarks = [];   // X marks where past shots landed (green=goal, red=miss)
 
   // ---- Helpers ----
   function setHUD() {
@@ -239,6 +240,7 @@
     playerPill.classList.add('show');
     score = 0; streak = 0; best = 0; misses = 0;
     boostCharge = 0; boostArmed = false;
+    shotMarks = [];
     setHUD();
     state = State.AIM;
     overlay.classList.add('hidden');
@@ -437,6 +439,19 @@
       toast(msg, col);
       ball._scored = false;
     }
+    addShotMark(ball._scored, aboveBar);
+  }
+
+  // Drop an X where the shot ended up: across at ball.x, up the goal by its height
+  // (z), or above the bar for a ballooned effort. Green = goal, red = miss.
+  function addShotMark(scored, over) {
+    const mx = clamp(ball.x, 30, V.w - 30);
+    const my = over
+      ? goal.y - 16
+      : clamp(goal.y + goal.h - 8 - clamp(ball.z, 0, 150) / 150 * (goal.h - 10),
+              goal.y - 16, goal.y + goal.h);
+    shotMarks.push({ x: mx, y: my, goal: scored });
+    if (shotMarks.length > 24) shotMarks.shift();
   }
 
   // ---- Update ----
@@ -485,6 +500,7 @@
       if (state === State.FLIGHT && (ball.y < -60 || ball.x < -120 || ball.x > V.w + 120)) {
         misses++; streak = 0; setHUD(); missSound(); toast('NOWHERE NEAR!','#ff6b6b');
         state = State.RESULT; resultTimer = 0; ball._scored = false;
+        addShotMark(false, ball.y < goal.y);
       }
     }
 
@@ -528,6 +544,7 @@
     drawPitch();
     drawAdBoards();
     drawGoal();
+    drawShotMarks();
     drawKeeper();
     drawStriker();
     drawBallTrail();
@@ -801,6 +818,32 @@
     }
     ctx.textAlign = 'left';
     ctx.restore();
+  }
+
+  // Persistent shot chart — an X for every shot this game
+  function drawShotMarks() {
+    const s = 11;
+    for (let i = 0; i < shotMarks.length; i++) {
+      const m = shotMarks[i];
+      const latest = i === shotMarks.length - 1;
+      ctx.lineCap = 'round';
+      // dark backing for contrast on the net / posts
+      ctx.strokeStyle = 'rgba(0,0,0,0.35)';
+      ctx.lineWidth = 7;
+      ctx.beginPath();
+      ctx.moveTo(m.x - s, m.y - s); ctx.lineTo(m.x + s, m.y + s);
+      ctx.moveTo(m.x + s, m.y - s); ctx.lineTo(m.x - s, m.y + s);
+      ctx.stroke();
+      // coloured X
+      ctx.strokeStyle = m.goal ? '#39d98a' : '#ff5b5b';
+      ctx.lineWidth = 4;
+      ctx.globalAlpha = latest ? 1 : 0.82;
+      ctx.beginPath();
+      ctx.moveTo(m.x - s, m.y - s); ctx.lineTo(m.x + s, m.y + s);
+      ctx.moveTo(m.x + s, m.y - s); ctx.lineTo(m.x - s, m.y + s);
+      ctx.stroke();
+      ctx.globalAlpha = 1;
+    }
   }
 
   function drawBallTrail() {

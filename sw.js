@@ -1,5 +1,5 @@
 /* Leroy Football service worker — offline-first cache */
-const CACHE = 'leroy-football-v6';
+const CACHE = 'leroy-football-v7';
 const ASSETS = [
   './',
   './index.html',
