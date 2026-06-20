@@ -150,6 +150,12 @@
   function kissSound()   { blip(520, 0.12, 'sine', 0.13, 720); setTimeout(()=>blip(820, 0.16, 'sine', 0.12, 1080), 110); }
   function wingsSound()  { [600,900,1300,1700].forEach((f,i)=>setTimeout(()=>blip(f,0.1,'triangle',0.16),i*45)); }
 
+  // Quick haptic buzz (where supported) — a physical "thunk" so a shot feels struck.
+  function haptic(pattern) {
+    if (muted) return;
+    try { if (navigator.vibrate) navigator.vibrate(pattern); } catch (e) {}
+  }
+
   muteBtn.addEventListener('click', () => {
     muted = !muted;
     muteBtn.textContent = muted ? '🔇' : '🔊';
@@ -351,6 +357,10 @@
     strikerKick = 1;
     hintEl.style.opacity = '0';
     kickSound();
+    // A bit of a shock the instant the ball is struck — a screen jolt plus a
+    // haptic buzz — so you feel the shot leave and never second-guess the X.
+    shake = Math.max(shake, 4 + power * 4 + (ball.winged ? 3 : 0));
+    haptic(ball.winged ? [25, 30, 45] : Math.round(18 + power * 22));
     spawnKickDust();
     return true;
   }
